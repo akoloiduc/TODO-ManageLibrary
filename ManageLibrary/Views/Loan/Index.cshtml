@@ -88,9 +88,23 @@
                         <td>@(loan.ExpiredDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                         <td>@(loan.ReturnDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                         <td>
-                            <span class="badge @(loan.Status == "Đang mượn" ? "bg-warning" : loan.Status == "Đã trả" ? "bg-success" : loan.Status == "Quá hạn" ? "bg-danger" : "bg-secondary")">
-                                @loan.Status
-                            </span>
+                            @{
+                                var today = DateOnly.FromDateTime(DateTime.Today);
+                                // 1. KIỂM TRA QUÁ HẠN TRƯỚC TIÊN
+                                if (loan.Status == "Đang mượn" && loan.ExpiredDate.HasValue && loan.ExpiredDate.Value < today)
+                                {
+                                    <span class="badge bg-danger">Quá hạn</span>
+                                }
+                                // 2. Nếu không quá hạn, mới kiểm tra trạng thái bình thường
+                                else if (loan.Status == "Đang mượn")
+                                {
+                                    <span class="badge bg-warning text-dark">@loan.Status</span>
+                                }
+                                else // (loan.Status == "Đã trả")
+                                {
+                                    <span class="badge bg-success">@loan.Status</span>
+                                }
+                            }
                         </td>
                         <td class="text-center text-nowrap">
                             @if (loan.Status != "Đã trả")

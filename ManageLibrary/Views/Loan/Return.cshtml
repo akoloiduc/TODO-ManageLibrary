@@ -60,8 +60,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="number" name="loanDetails[@i].Fine" value="0" class="form-control form-control-sm"
-                                           id="fine-@i" min="0" />
+                                    <input asp-for="@detailsList[i].Fine" type="number" class="form-control form-control-sm" id="fine-@i" min="0" />
                                 </td>
                             </tr>
                         }
@@ -79,13 +78,14 @@
 
 @section Scripts {
     <script>
-        function updateFine(checkbox, index) {
+         function updateFine(checkbox, index) {
             const fineInput = document.getElementById(`fine-${index}`);
+            const lostFine = 100000; // Tiền phạt mất sách
+
             if (checkbox.checked) {
-                // SỬA: Gán giá trị phạt khi mất sách (ví dụ)
-                fineInput.value = "100000";
+                fineInput.value = lostFine;
             } else {
-                fineInput.value = "0";
+                fineInput.value = fineInput.defaultValue;
             }
         }
     </script>

@@ -137,7 +137,7 @@ namespace QLThuVien.Controllers
                 ModelState.AddModelError("", "Vui lòng chọn ít nhất một cuốn sách.");
             }
 
-            // 2. Kiểm tra độc giả (giữ nguyên)
+            // 2. Kiểm tra độc giả 
             var readerExists = await _context.Readers.AnyAsync(r => r.ReaderId == loan.ReaderId);
             if (!readerExists)
             {
@@ -247,9 +247,40 @@ namespace QLThuVien.Controllers
                 return RedirectToAction("Index");
             }
 
+
+            // 1. Định nghĩa mức phạt (ví dụ: 5,000 VND/ngày)
+            const int FINE_PER_DAY = 5000;
+
+            // 2. Lấy ngày hôm nay
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            // 3. Kiểm tra xem đã quá hạn chưa
+            if (loan.ExpiredDate.HasValue && today > loan.ExpiredDate.Value)
+            {
+                // 4. Tính số ngày quá hạn
+                int overdueDays = today.DayNumber - loan.ExpiredDate.Value.DayNumber;
+
+                // 5. Tính tổng tiền phạt
+                int totalFine = overdueDays * FINE_PER_DAY;
+
+                // 6. Gán tiền phạt này vào các chi tiết
+                // (Code này gán tiền phạt cho TẤT CẢ các cuốn sách trong phiếu.
+                //  Bạn có thể đổi logic, ví dụ: chỉ gán cho cuốn đầu tiên)
+                if (loan.LoanDetails != null)
+                {
+                    foreach (var detail in loan.LoanDetails)
+                    {
+                        // Chỉ gán nếu tiền phạt hiện tại là 0 (chưa bị mất sách)
+                        if (detail.Fine == 0)
+                        {
+                            detail.Fine = totalFine;
+                        }
+                    }
+                }
+            }
+ 
             return View(loan);
         }
-
         // POST: /Admin/Loan/Return/{id}
         [HttpPost("Return/{id}")]
         [ValidateAntiForgeryToken]
