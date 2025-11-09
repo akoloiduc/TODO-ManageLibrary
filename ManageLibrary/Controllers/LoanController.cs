@@ -265,7 +265,6 @@ namespace QLThuVien.Controllers
 
                 // 6. Gán tiền phạt này vào các chi tiết
                 // (Code này gán tiền phạt cho TẤT CẢ các cuốn sách trong phiếu.
-                //  Bạn có thể đổi logic, ví dụ: chỉ gán cho cuốn đầu tiên)
                 if (loan.LoanDetails != null)
                 {
                     foreach (var detail in loan.LoanDetails)
