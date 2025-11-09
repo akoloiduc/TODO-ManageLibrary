@@ -89,20 +89,27 @@
                         <td>@(loan.ReturnDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                         <td>
                             @{
+                                // Lấy ngày hôm nay
                                 var today = DateOnly.FromDateTime(DateTime.Today);
-                                // 1. KIỂM TRA QUÁ HẠN TRƯỚC TIÊN
-                                if (loan.Status == "Đang mượn" && loan.ExpiredDate.HasValue && loan.ExpiredDate.Value < today)
+
+                                // 1. Ưu tiên hàng đầu: Nếu đã trả, luôn là MÀU XANH
+                                if (loan.Status == "Đã trả")
                                 {
+                                    <span class="badge bg-success">Đã trả</span>
+                                }
+
+                                // 2. Nếu CHƯA TRẢ, kiểm tra ngày hết hạn
+                                else if (loan.ExpiredDate.HasValue && loan.ExpiredDate.Value < today)
+                                {
+                                    // Nếu Hạn trả < Hôm nay -> MÀU ĐỎ
                                     <span class="badge bg-danger">Quá hạn</span>
                                 }
-                                // 2. Nếu không quá hạn, mới kiểm tra trạng thái bình thường
-                                else if (loan.Status == "Đang mượn")
+
+                                // 3. Trường hợp cuối: Chưa trả VÀ còn hạn
+                                else
                                 {
-                                    <span class="badge bg-warning text-dark">@loan.Status</span>
-                                }
-                                else // (loan.Status == "Đã trả")
-                                {
-                                    <span class="badge bg-success">@loan.Status</span>
+                                    // Nếu Hạn trả >= Hôm nay -> MÀU VÀNG
+                                    <span class="badge bg-warning text-dark">Đang mượn</span>
                                 }
                             }
                         </td>
