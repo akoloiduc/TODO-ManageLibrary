@@ -73,42 +73,60 @@ namespace QLThuVien.Controllers
         }
 
 
-        // GET: /Admin/Loan
-        public async Task<IActionResult> Index(string? search, string? status)
+public async Task<IActionResult> Index(string? search, string? status)
+{
+    ViewData["CurrentFilter"] = search;
+    ViewData["CurrentStatus"] = status;
+
+    var loansQuery = _context.LoanSlips
+        .Include(l => l.Reader)
+        .Include(l => l.Employee)
+        .Include(l => l.LoanDetails)
+            .ThenInclude(ld => ld.Book)
+        .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+        var term = search.ToLower();
+        loansQuery = loansQuery.Where(l =>
+            l.LoanId.ToLower().Contains(term) ||
+            (l.Reader != null && l.Reader.FullName.ToLower().Contains(term)) ||
+            l.ReaderId.ToLower().Contains(term)
+        );
+    }
+
+    if (!string.IsNullOrWhiteSpace(status))
+    {
+        loansQuery = loansQuery.Where(l => l.Status == status);
+    }
+
+
+    var loans = await loansQuery
+        .OrderByDescending(l => l.LoanDate)
+        .ToListAsync();
+
+    
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    bool hasChanges = false;
+
+    foreach (var loan in loans)
+    {
+        if (loan.Status == "Đang mượn" &&
+            loan.ExpiredDate.HasValue &&
+            loan.ExpiredDate.Value < today)
         {
-            ViewData["CurrentFilter"] = search;
-            ViewData["CurrentStatus"] = status;
-
-            // Lấy dữ liệu từ DB, có lọc theo từ khóa và trạng thái
-            var loansQuery = _context.LoanSlips
-                .Include(l => l.Reader) // Nạp thông tin Độc giả
-                .Include(l => l.Employee) // Nạp thông tin Nhân viên
-                .Include(l => l.LoanDetails) // Nạp danh sách chi tiết
-                    .ThenInclude(ld => ld.Book) // Nạp thông tin Sách từ chi tiết
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var term = search.ToLower();
-                loansQuery = loansQuery.Where(l =>
-                    l.LoanId.ToLower().Contains(term) ||
-                    (l.Reader != null && l.Reader.FullName.ToLower().Contains(term)) ||
-                    l.ReaderId.ToLower().Contains(term)
-                );
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                loansQuery = loansQuery.Where(l => l.Status == status);
-            }
-
-            var loans = await loansQuery
-                .AsNoTracking()
-                .OrderByDescending(l => l.LoanDate)
-                .ToListAsync();
-
-            return View(loans);
+            loan.Status = "Quá hạn";
+            hasChanges = true;
         }
+    }
+
+    if (hasChanges)
+    {
+        await _context.SaveChangesAsync();
+    }
+
+    return View(loans);
+}
 
         // GET: /Admin/Loan/Create
         [HttpGet("Create")]
